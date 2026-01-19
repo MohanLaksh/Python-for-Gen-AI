@@ -11,6 +11,27 @@ A hands-on learning workspace for Python fundamentals and the building blocks co
 - **`5_basic_pydantic/`**: Pydantic basics + a few advanced patterns.
 - **`6_httpx_basics/`**: `httpx` sync/async/streaming patterns, plus LLM-style examples.
 - **`7_jupyter_notebook/`**: Notebook(s) for interactive exploration.
+- **`open_code/`**: Larger “open code” sample projects (complete mini-apps you can run end-to-end).
+
+## Open code projects
+
+### Smart Study Assistant (`open_code/smart-study-assistant/`)
+
+Multi-role CLI assistant that routes tasks between OpenAI / Gemini / Claude based on the query type/complexity.
+
+```bash
+cd "open_code/smart-study-assistant"
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Set at least one API key (recommended: use a local .env file)
+# OPENAI_API_KEY=...
+# GEMINI_API_KEY=...
+# ANTHROPIC_API_KEY=...
+
+python main.py chat
+```
 
 ## Setup (recommended)
 
