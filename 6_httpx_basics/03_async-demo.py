@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 
 async def task(name, delay):
@@ -8,11 +9,12 @@ async def task(name, delay):
 
 
 async def main():
+    start_time = time.time()
     await asyncio.gather(
         task("A", 2),
-        task("B", 2),
+        task("B", 4),
         task("C", 2)
     )
-
+    print(time.time() - start_time)
 
 asyncio.run(main())

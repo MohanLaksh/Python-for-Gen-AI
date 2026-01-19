@@ -1,6 +1,24 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 import re
 import tiktoken
+
+class Settings(BaseSettings):
+    openai_api_key: str = ""
+    model: str = "gpt-4o"
+    max_tokens: int = 256
+    debug: bool = False
+
+    model_config = SettingsConfigDict(
+        env_file=".env.dev",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+
+if __name__ == "__main__":
+    settings = Settings()
+    print(settings.model_dump(exclude={"openai_api_key"}))
 
 class PromptTemplate(BaseModel):
     template: str = Field(..., description="The template to use for the prompt", min_length=1, max_length=1000)
