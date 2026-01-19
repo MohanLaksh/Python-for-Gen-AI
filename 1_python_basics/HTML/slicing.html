@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python List/Tuple Slicing Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .visualization-area {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .array-container {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .array-item {
+            width: 70px;
+            height: 70px;
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            transition: all 0.4s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .array-item.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            border-color: #667eea;
+        }
+
+        .array-item.start-marker {
+            border-color: #10b981;
+            border-width: 4px;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .array-item.end-marker {
+            border-color: #ef4444;
+            border-width: 4px;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .indices {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .index {
+            width: 70px;
+            text-align: center;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .positive-index {
+            color: #10b981;
+        }
+
+        .negative-index {
+            color: #ef4444;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .slice-inputs {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-display {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 1.1em;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .code-display {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            overflow-x: auto;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .example-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-card:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .example-card h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .example-card code {
+            background: #f1f5f9;
+            padding: 8px;
+            border-radius: 5px;
+            display: block;
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+
+        .explanation {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .step-indicator {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐍 Python List/Tuple Slicing Visualizer</h1>
+        <p class="subtitle">Master slicing with positive, negative, and mixed indices</p>
+
+        <div class="visualization-area">
+            <div class="step-indicator" id="stepIndicator">Enter your slicing parameters below</div>
+            
+            <div class="array-container" id="arrayContainer"></div>
+            
+            <div class="indices">
+                <div style="width: 100%; text-align: center; margin-bottom: 10px; font-weight: bold; color: #10b981;">Positive Indices ↓</div>
+            </div>
+            <div class="indices" id="positiveIndices"></div>
+            
+            <div class="indices">
+                <div style="width: 100%; text-align: center; margin: 20px 0 10px 0; font-weight: bold; color: #ef4444;">Negative Indices ↓</div>
+            </div>
+            <div class="indices" id="negativeIndices"></div>
+
+            <div class="code-display" id="codeDisplay">
+                data = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']<br>
+                result = data[start:stop:step]
+            </div>
+
+            <div class="result-display" id="resultDisplay">
+                👆 Adjust the slicing parameters and click "Slice!" to see the result
+            </div>
+
+            <div class="explanation" id="explanation"></div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>Custom Data (comma-separated):</label>
+                <input type="text" id="customData" placeholder="A,B,C,D,E,F,G,H" value="A,B,C,D,E,F,G,H">
+                <button onclick="updateData()" style="margin-top: 10px;">Update Data</button>
+            </div>
+
+            <div class="control-group">
+                <label>Slicing Parameters:</label>
+                <div class="slice-inputs">
+                    <div class="input-wrapper">
+                        <input type="number" id="startIndex" placeholder="Start (optional)">
+                        <small>Start index</small>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" id="stopIndex" placeholder="Stop (optional)">
+                        <small>Stop index</small>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="number" id="stepIndex" placeholder="Step (default: 1)" value="1">
+                        <small>Step value</small>
+                    </div>
+                    <button onclick="performSlice()">Slice! 🔪</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3 style="margin-bottom: 15px; color: #667eea;">📚 Example Slicing Operations</h3>
+            <div class="examples-grid" id="examplesGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        let data = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+        const examples = [
+            { name: "First 3 elements", start: null, stop: 3, step: 1, desc: "From beginning to index 3" },
+            { name: "Last 3 elements", start: -3, stop: null, step: 1, desc: "From -3 to end" },
+            { name: "Every 2nd element", start: null, stop: null, step: 2, desc: "Skip every other element" },
+            { name: "Reverse", start: null, stop: null, step: -1, desc: "Reverse the entire sequence" },
+            { name: "Middle section", start: 2, stop: 6, step: 1, desc: "Elements from index 2 to 5" },
+            { name: "Negative start/stop", start: -6, stop: -2, step: 1, desc: "Using negative indices" },
+            { name: "Mixed indices", start: -5, stop: 6, step: 1, desc: "Negative start, positive stop" },
+            { name: "Reverse middle", start: 5, stop: 1, step: -1, desc: "Reverse from 5 to 2" },
+            { name: "Every 3rd", start: 1, stop: null, step: 3, desc: "Start at 1, every 3rd element" },
+            { name: "Negative step", start: 6, stop: 1, step: -2, desc: "Backward with step -2" },
+            { name: "Skip from end", start: null, stop: -3, step: 1, desc: "All except last 3" },
+            { name: "Empty slice", start: 5, stop: 2, step: 1, desc: "Invalid range returns empty" }
+        ];
+
+        function updateData() {
+            const input = document.getElementById('customData').value;
+            data = input.split(',').map(item => item.trim());
+            renderArray();
+            renderIndices();
+        }
+
+        function renderArray() {
+            const container = document.getElementById('arrayContainer');
+            container.innerHTML = '';
+            
+            data.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'array-item';
+                div.textContent = item;
+                div.id = `item-${index}`;
+                container.appendChild(div);
+            });
+        }
+
+        function renderIndices() {
+            const positiveContainer = document.getElementById('positiveIndices');
+            const negativeContainer = document.getElementById('negativeIndices');
+            
+            positiveContainer.innerHTML = '';
+            negativeContainer.innerHTML = '';
+            
+            data.forEach((_, index) => {
+                const posDiv = document.createElement('div');
+                posDiv.className = 'index positive-index';
+                posDiv.textContent = index;
+                positiveContainer.appendChild(posDiv);
+                
+                const negDiv = document.createElement('div');
+                negDiv.className = 'index negative-index';
+                negDiv.textContent = -(data.length - index);
+                negativeContainer.appendChild(negDiv);
+            });
+        }
+
+        function renderExamples() {
+            const grid = document.getElementById('examplesGrid');
+            grid.innerHTML = '';
+            
+            examples.forEach((example, idx) => {
+                const card = document.createElement('div');
+                card.className = 'example-card';
+                card.onclick = () => applyExample(example);
+                
+                const startStr = example.start === null ? '' : example.start;
+                const stopStr = example.stop === null ? '' : example.stop;
+                const stepStr = example.step === 1 ? '' : `:${example.step}`;
+                
+                card.innerHTML = `
+                    <h4>${example.name}</h4>
+                    <code>data[${startStr}:${stopStr}${stepStr}]</code>
+                    <p style="margin-top: 8px; color: #666; font-size: 0.9em;">${example.desc}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function applyExample(example) {
+            document.getElementById('startIndex').value = example.start === null ? '' : example.start;
+            document.getElementById('stopIndex').value = example.stop === null ? '' : example.stop;
+            document.getElementById('stepIndex').value = example.step;
+            performSlice();
+        }
+
+        async function performSlice() {
+            const startInput = document.getElementById('startIndex').value;
+            const stopInput = document.getElementById('stopIndex').value;
+            const stepInput = document.getElementById('stepIndex').value;
+            
+            const start = startInput === '' ? null : parseInt(startInput);
+            const stop = stopInput === '' ? null : parseInt(stopInput);
+            const step = stepInput === '' ? 1 : parseInt(stepInput);
+
+            if (step === 0) {
+                alert('Step cannot be zero!');
+                return;
+            }
+
+            // Clear previous highlighting
+            document.querySelectorAll('.array-item').forEach(item => {
+                item.classList.remove('selected', 'start-marker', 'end-marker');
+            });
+
+            // Calculate actual indices
+            const len = data.length;
+            let actualStart, actualStop;
+            
+            if (step > 0) {
+                actualStart = start === null ? 0 : (start < 0 ? Math.max(0, len + start) : Math.min(start, len));
+                actualStop = stop === null ? len : (stop < 0 ? Math.max(0, len + stop) : Math.min(stop, len));
+            } else {
+                actualStart = start === null ? len - 1 : (start < 0 ? Math.max(-1, len + start) : Math.min(start, len - 1));
+                actualStop = stop === null ? -1 : (stop < 0 ? Math.max(-1, len + stop) : Math.min(stop, len - 1));
+            }
+
+            // Perform the slice
+            const result = pythonSlice(data, start, stop, step);
+
+            // Animate the slicing
+            await animateSlice(actualStart, actualStop, step, result);
+
+            // Display result
+            const startStr = start === null ? '' : start;
+            const stopStr = stop === null ? '' : stop;
+            const stepStr = step === 1 ? '' : `:${step}`;
+            
+            document.getElementById('codeDisplay').innerHTML = `
+                data = [${data.map(d => `'${d}'`).join(', ')}]<br>
+                result = data[${startStr}:${stopStr}${stepStr}]<br>
+                <span style="color: #10b981;">result = [${result.map(r => `'${r}'`).join(', ')}]</span>
+            `;
+
+            document.getElementById('resultDisplay').textContent = 
+                `Result: [${result.join(', ')}] (${result.length} element${result.length !== 1 ? 's' : ''})`;
+
+            explainSlice(start, stop, step, result);
+        }
+
+        function pythonSlice(arr, start, stop, step) {
+            const len = arr.length;
+            const result = [];
+            
+            let actualStart, actualStop;
+            
+            if (step > 0) {
+                actualStart = start === null ? 0 : (start < 0 ? Math.max(0, len + start) : start);
+                actualStop = stop === null ? len : (stop < 0 ? Math.max(0, len + stop) : stop);
+                
+                for (let i = actualStart; i < actualStop && i < len; i += step) {
+                    if (i >= 0) result.push(arr[i]);
+                }
+            } else {
+                actualStart = start === null ? len - 1 : (start < 0 ? len + start : start);
+                actualStop = stop === null ? -1 : (stop < 0 ? len + stop : stop);
+                
+                for (let i = actualStart; i > actualStop && i >= 0; i += step) {
+                    if (i < len) result.push(arr[i]);
+                }
+            }
+            
+            return result;
+        }
+
+        async function animateSlice(start, stop, step, result) {
+            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+            
+            if (step > 0) {
+                for (let i = start; i < stop && i < data.length; i += step) {
+                    if (i >= 0) {
+                        const item = document.getElementById(`item-${i}`);
+                        if (item) {
+                            if (i === start) item.classList.add('start-marker');
+                            if (i + step >= stop || i + step >= data.length) item.classList.add('end-marker');
+                            item.classList.add('selected');
+                            await delay(300);
+                        }
+                    }
+                }
+            } else {
+                for (let i = start; i > stop && i >= 0; i += step) {
+                    if (i < data.length) {
+                        const item = document.getElementById(`item-${i}`);
+                        if (item) {
+                            if (i === start) item.classList.add('start-marker');
+                            if (i + step <= stop || i + step < 0) item.classList.add('end-marker');
+                            item.classList.add('selected');
+                            await delay(300);
+                        }
+                    }
+                }
+            }
+            
+            document.getElementById('stepIndicator').textContent = 
+                `Selected ${result.length} element${result.length !== 1 ? 's' : ''}`;
+        }
+
+        function explainSlice(start, stop, step, result) {
+            const len = data.length;
+            let explanation = '<strong>How this slice works:</strong><br><br>';
+            
+            const startStr = start === null ? 'beginning' : (start < 0 ? `${start} (= index ${len + start})` : start);
+            const stopStr = stop === null ? 'end' : (stop < 0 ? `${stop} (= index ${len + stop})` : stop);
+            
+            if (step === 1) {
+                explanation += `This extracts elements from ${startStr} up to (but not including) ${stopStr}.`;
+            } else if (step > 1) {
+                explanation += `Starting from ${startStr}, this takes every ${step}${getOrdinalSuffix(step)} element until ${stopStr}.`;
+            } else if (step === -1) {
+                explanation += `This reverses the sequence from ${startStr} down to (but not including) ${stopStr}.`;
+            } else {
+                explanation += `Starting from ${startStr}, this moves backward taking every ${Math.abs(step)}${getOrdinalSuffix(Math.abs(step))} element until ${stopStr}.`;
+            }
+            
+            if (result.length === 0) {
+                explanation += '<br><br><strong>Note:</strong> The slice returned an empty result because the range is invalid or produces no elements.';
+            }
+            
+            document.getElementById('explanation').innerHTML = explanation;
+        }
+
+        function getOrdinalSuffix(num) {
+            const j = num % 10;
+            const k = num % 100;
+            if (j === 1 && k !== 11) return 'st';
+            if (j === 2 && k !== 12) return 'nd';
+            if (j === 3 && k !== 13) return 'rd';
+            return 'th';
+        }
+
+        // Initialize
+        renderArray();
+        renderIndices();
+        renderExamples();
+    </script>
+</body>
+</html>
