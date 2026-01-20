@@ -15,15 +15,15 @@ QUIZ_MCQ_TEMPLATE = """Generate {num_questions} multiple-choice questions about 
 Format each question as:
 ```
 ## Question 1
-{question text}
+{{question text}}
 
-A) {option A}
-B) {option B}
-C) {option C}
-D) {option D}
+A) {{option A}}
+B) {{option B}}
+C) {{option C}}
+D) {{option D}}
 
-**Answer:** {correct option}
-**Explanation:** {detailed explanation of why this is correct and why others are wrong}
+**Answer:** {{correct option}}
+**Explanation:** {{detailed explanation of why this is correct and why others are wrong}}
 ```
 
 Ensure:
@@ -38,10 +38,10 @@ QUIZ_TRUE_FALSE_TEMPLATE = """Generate {num_questions} true/false questions abou
 Format each question as:
 ```
 ## Question 1
-{statement}
+{{statement}}
 
 **Answer:** True/False
-**Explanation:** {explanation}
+**Explanation:** {{explanation}}
 ```
 
 Ensure:
@@ -55,10 +55,10 @@ QUIZ_FILL_BLANK_TEMPLATE = """Generate {num_questions} fill-in-the-blank questio
 Format each question as:
 ```
 ## Question 1
-{question text with _____ for blanks}
+{{question text with _____ for blanks}}
 
-**Answer:** {correct answer(s)}
-**Explanation:** {context or explanation}
+**Answer:** {{correct answer(s)}}
+**Explanation:** {{context or explanation}}
 ```
 
 Ensure:
