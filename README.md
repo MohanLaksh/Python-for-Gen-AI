@@ -33,6 +33,23 @@ pip install -r requirements.txt
 python main.py chat
 ```
 
+### Function Calling: Weather (`open_code/function_calling/`)
+
+Small demo showing OpenAI tool/function calling that fetches current weather from OpenWeatherMap (city name or ZIP+country).
+
+```bash
+cd "open_code/function_calling"
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Create a .env file (see env.example)
+# OPENAI_API_KEY=...
+# WEATHER_API_KEY=...
+
+python main.py
+```
+
 ## Setup (recommended)
 
 Create a virtual environment **per module** (each folder may have its own `requirements.txt`).
