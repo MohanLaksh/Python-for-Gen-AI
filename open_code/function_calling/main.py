@@ -140,7 +140,7 @@ def run_once(prompt: str) -> str:
     if not openai_api_key:
         return "Error: OPENAI_API_KEY is not set in the environment."
 
-    client = OpenAI(api_key=openai_api_key)
+    client = OpenAI(api_key=openai_api_key, base_url="http://192.168.1.5:1234/v1")
 
     messages: list[Dict[str, Any]] = [{"role": "user", "content": prompt}]
 
@@ -150,6 +150,8 @@ def run_once(prompt: str) -> str:
         tools=TOOLS,
         tool_choice="auto",
     )
+
+    print("response", response)
 
     msg = response.choices[0].message
     messages.append(msg)
