@@ -11,16 +11,16 @@ A hands-on learning workspace for Python fundamentals and the building blocks co
 - **`5_basic_pydantic/`**: Pydantic basics + a few advanced patterns.
 - **`6_httpx_basics/`**: `httpx` sync/async/streaming patterns, plus LLM-style examples.
 - **`7_jupyter_notebook/`**: Notebook(s) for interactive exploration.
-- **`open_code/`**: Larger “open code” sample projects (complete mini-apps you can run end-to-end).
+- **`projects/`**: Larger "projects" sample projects (complete mini-apps you can run end-to-end).
 
-## Open code projects
+## Projects
 
-### Smart Study Assistant (`open_code/smart-study-assistant/`)
+### Smart Study Assistant (`projects/smart-study-assistant/`)
 
 Multi-role CLI assistant that routes tasks between OpenAI / Gemini / Claude based on the query type/complexity.
 
 ```bash
-cd "open_code/smart-study-assistant"
+cd "projects/smart-study-assistant"
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -33,12 +33,21 @@ pip install -r requirements.txt
 python main.py chat
 ```
 
-### Function Calling: Weather (`open_code/function_calling/`)
+### Smart Study Assistant Simple (`projects/smart-study-assistant-simple/`)
+
+A streamlined version of the Smart Study Assistant, focusing on core logic.
+
+```bash
+cd "projects/smart-study-assistant-simple"
+# ... setup steps similar to above ...
+```
+
+### Function Calling: Weather (`projects/function_calling/`)
 
 Small demo showing OpenAI tool/function calling that fetches current weather from OpenWeatherMap (city name or ZIP+country).
 
 ```bash
-cd "open_code/function_calling"
+cd "projects/function_calling"
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -48,6 +57,15 @@ pip install -r requirements.txt
 # WEATHER_API_KEY=...
 
 python main.py
+```
+
+### LLM API Wrapper (`projects/llm-api-wrapper/`)
+
+Unified wrapper for multiple LLM providers.
+
+```bash
+cd "projects/llm-api-wrapper"
+# ... setup steps ...
 ```
 
 ## Setup (recommended)
