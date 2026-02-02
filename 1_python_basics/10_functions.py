@@ -122,7 +122,7 @@ def person_info(name, age, city):
     return f"{name} is {age} years old and lives in {city}"
 
 # Using keyword arguments
-info = person_info(name="John", age=30, city="NYC")
+info = person_info(name="John", age=30, city="NYC", address="123 Main St", email="[EMAIL_ADDRESS]")
 print(info)  # Output: John is 30 years old and lives in NYC
 
 # Order doesn't matter with keyword arguments

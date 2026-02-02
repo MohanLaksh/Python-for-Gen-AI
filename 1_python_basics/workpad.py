@@ -1,22 +1,11 @@
-# test_math.py
-def add(a, b):
-    return a + b
+from collections import deque
 
-def multiply(a, b):
-    return a * b
-# Test functions - no class needed!
+conversation_history = deque(maxlen=5)
 
+list1= [1,2,3,4,5, 6, 7, 8, 9, 10]
 
-import pytest
+for i in list1:
+    conversation_history.append(i)
+    print(conversation_history)
 
-def test_add():
-    assert add(2, 3) == 5
-    assert add(-1, 1) == 0
-    assert add(0, 0) == 0
-def test_multiply():
-    assert multiply(2, 3) == 6
-    assert multiply(-1, 5) == -5
-    assert multiply(0, 100) == 0
-def test_add_floats():
-    result = add(0.1, 0.2)
-    assert result == pytest.approx(0.3) # Handle floating point
+print(conversation_history)
