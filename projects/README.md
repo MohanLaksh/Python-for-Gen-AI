@@ -17,3 +17,9 @@ A comprehensive AI-powered application designed to assist users in their learnin
 
 ### 4. [Smart Study Assistant (Simple)](./smart-study-assistant-simple/)
 A streamlined version of the Smart Study Assistant. This project focuses on the core logic and basic implementations, making it an excellent starting point for understanding how to build educational AI tools without the complexity of a full-scale application.
+
+### 5. [Smart Text Summariser](./smart-text-summerizer/)
+A Python-based multi-LLM summarisation engine that provides a unified interface for generating structured summaries using various AI providers.
+- **Providers Supported**: OpenAI, Anthropic, Google Gemini, LM Studio.
+- **Features**: Structured Pydantic output, robust retry logic, and easy provider switching via CLI.
+

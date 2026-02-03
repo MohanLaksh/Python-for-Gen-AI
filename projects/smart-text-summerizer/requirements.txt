@@ -1,0 +1,8 @@
+openai
+anthropic
+google-genai
+httpx
+jinja2
+pydantic
+python-dotenv
+tenacity
