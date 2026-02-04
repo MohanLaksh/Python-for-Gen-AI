@@ -59,6 +59,22 @@ pip install -r requirements.txt
 python main.py
 ```
 
+### FAQ RAG System (`projects/faq-rag-system/`)
+
+A Retrieval-Augmented Generation (RAG) system for answering FAQs interactive CLI, supporting OpenAI and local embeddings (Sentence Transformers).
+
+```bash
+cd "projects/faq-rag-system"
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Create .env with OPENAI_API_KEY if using OpenAI
+# Or use local embeddings (see README)
+
+python main.py
+```
+
 ### LLM API Wrapper (`projects/llm-api-wrapper/`)
 
 Unified wrapper for multiple LLM providers.
