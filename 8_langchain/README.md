@@ -1,6 +1,6 @@
 # LangChain v0.3 Components — Examples
 
-Examples based on the **LangChain v0.3 Main Components Guide** (PPTX/DOCX).
+Examples based on the **LangChain v0.3 Main Components Guide**.
 
 ## 13 Essential Building Blocks
 
