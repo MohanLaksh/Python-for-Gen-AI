@@ -1,0 +1,7 @@
+LangChain v0.3 Components Guide
+
+This document covers the main building blocks for building LLM applications.
+Key components include: LLMs, Prompts, Output Parsers, LCEL, Document Loaders,
+Text Splitters, Embeddings, Vector Stores, Retrievers, Memory, Tools, and Callbacks.
+
+Use LCEL (LangChain Expression Language) to compose chains with the pipe operator.
