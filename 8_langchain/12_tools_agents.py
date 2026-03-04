@@ -12,7 +12,6 @@ load_dotenv()
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
@@ -43,13 +42,24 @@ def calculate(expression: str) -> str:
 
 
 tools = [get_weather, calculate]
-agent = create_react_agent(llm, tools)
 
-# Invoke with a question that may require tools
-result = agent.invoke({
-    "messages": [HumanMessage(content="What is 2**10 and the weather in London?")],
-})
-
-# Last message is the agent's reply
-last_msg = result["messages"][-1]
-print("Agent response:", last_msg.content if hasattr(last_msg, "content") else last_msg)
+# Use the new create_agent API (LangChain v0.3+)
+try:
+    from langchain.agents import create_agent
+    agent = create_agent(llm, tools)
+    # Invoke with a question that may require tools
+    result = agent.invoke({
+        "messages": [HumanMessage(content="What is 2**10 and the weather in London?")],
+    })
+    # Last message is the agent's reply
+    last_msg = result["messages"][-1]
+    print("Agent response:", last_msg.content if hasattr(last_msg, "content") else last_msg)
+except ImportError:
+    # Fallback for older versions
+    from langgraph.prebuilt import create_react_agent
+    agent = create_react_agent(llm, tools)
+    result = agent.invoke({
+        "messages": [HumanMessage(content="What is 2**10 and the weather in London?")],
+    })
+    last_msg = result["messages"][-1]
+    print("Agent response:", last_msg.content if hasattr(last_msg, "content") else last_msg)

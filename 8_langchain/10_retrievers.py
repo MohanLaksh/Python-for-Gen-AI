@@ -26,9 +26,15 @@ docs = [
 ]
 
 try:
-    from langchain_community.vectorstores import FAISS
+    from langchain_community.vectorstores import Chroma
 
-    vectorstore = FAISS.from_documents(docs, embeddings)
+    # Create ChromaDB vector store (persists automatically)
+    vectorstore = Chroma.from_documents(
+        docs,
+        embeddings,
+        persist_directory="./chroma_retrievers",
+        collection_name="retrievers_demo",
+    )
 
     # Basic retriever
     retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
@@ -65,4 +71,4 @@ try:
     print("RAG answer:", answer[:80] + "..." if len(answer) > 80 else answer)
 
 except ImportError:
-    print("Retrievers: pip install langchain-community faiss-cpu")
+    print("Retrievers: pip install langchain-community chromadb")

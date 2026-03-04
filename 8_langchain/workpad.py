@@ -1,33 +1,57 @@
-from langchain_core.runnables import RunnablePassthrough, RunnableParallel, RunnableLambda
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_openai import ChatOpenAI
+"""
+12. Callbacks — Hooks for logging, tracing, monitoring
+Based on LangChain v0.3 Components Guide
+
+Built-in:
+- StreamingStdOutCallbackHandler — print tokens to stdout
+- LangSmithTracer — automatic tracing (LANGCHAIN_TRACING_V2=true)
+- Custom via BaseCallbackHandler
+"""
 from dotenv import load_dotenv
 load_dotenv()
 
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 
-# RunnableParallel + RunnablePassthrough — RAG-style (simulated retriever)
-from langchain_core.documents import Document
+# Streaming callback — tokens print as they arrive
+# try:
+#     from langchain_core.callbacks import StreamingStdOutCallbackHandler
 
-def mock_retriever(query: str):
-    return [
-        Document(page_content="LCEL is LangChain Expression Language. Pipe with |.", metadata={}),
-    ]
+#     llm = ChatOpenAI(
+#         model="gpt-4o-mini",
+#         streaming=True,
+#         callbacks=[StreamingStdOutCallbackHandler()],
+#     )
+#     print("Streaming with callback:")
+#     llm.invoke([HumanMessage(content="Explain Langserve")])
+#     print()
 
-retriever = RunnableLambda(mock_retriever)
+# except ImportError:
+#         print("StreamingStdOutCallbackHandler: check langchain/langchain_core")
 
-def format_docs(docs):
-    return "\n".join(d.page_content for d in docs) if docs else ""
 
-# RunnableParallel runs retriever with input, passes input as "question"
-retrieval = RunnableParallel({
-    "context": retriever | RunnableLambda(format_docs),
-    "question": RunnablePassthrough(),
-})
-rag_prompt = ChatPromptTemplate.from_messages([
-    ("system", "Answer based on context only.\nContext:\n{context}"),
-    ("human", "{question}"),
-])
-rag_chain = retrieval | rag_prompt | llm | StrOutputParser()
-print(rag_chain.invoke("What is LCEL?"))
+from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.agents import AgentAction
+
+
+class TokenCounter(BaseCallbackHandler):
+    def __init__(self):
+        self.count = 0
+
+    def on_llm_new_token(self, token: str, **kwargs):
+
+        print("Token:", token)
+        self.count += 1
+
+
+    def on_agent_action(self, action: AgentAction, **kwargs):
+        print("Agent action:", action.tool_calls)
+
+
+counter = TokenCounter()
+
+
+llm2 = ChatOpenAI(model="gpt-4o-mini", temperature=0, streaming=True)
+result =  llm2.invoke([HumanMessage(content="Hi")], config={"callbacks": [counter]})
+# print("Result:", result)
+print("Tokens counted:", counter.count)

@@ -37,7 +37,7 @@ def format_docs(docs):
 
 # RunnableParallel runs retriever with input, passes input as "question"
 retrieval = RunnableParallel({
-    "context": retriever | RunnableLambda(format_docs),
+    "context": RunnableLambda(mock_retriever) | RunnableLambda(format_docs),
     "question": RunnablePassthrough(),
 })
 rag_prompt = ChatPromptTemplate.from_messages([

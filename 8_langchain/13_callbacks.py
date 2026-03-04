@@ -25,18 +25,8 @@ try:
     print("Streaming with callback:")
     llm.invoke([HumanMessage(content="Say 'Hello' in exactly one word.")])
     print()
+
 except ImportError:
-    try:
-        from langchain.callbacks import StreamingStdOutCallbackHandler
-        llm = ChatOpenAI(
-            model="gpt-4o-mini",
-            streaming=True,
-            callbacks=[StreamingStdOutCallbackHandler()],
-        )
-        print("Streaming with callback:")
-        llm.invoke([HumanMessage(content="Say 'Hello' in exactly one word.")])
-        print()
-    except ImportError:
         print("StreamingStdOutCallbackHandler: check langchain/langchain_core")
 
 # Custom callback — token counter
@@ -52,6 +42,8 @@ class TokenCounter(BaseCallbackHandler):
 
 
 counter = TokenCounter()
-llm2 = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+
+llm2 = ChatOpenAI(model="gpt-4o-mini", temperature=0, streaming=True)
 llm2.invoke([HumanMessage(content="Hi")], config={"callbacks": [counter]})
 print("Tokens counted:", counter.count)

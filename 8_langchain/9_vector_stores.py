@@ -4,7 +4,7 @@ Based on LangChain v0.3 Components Guide
 
 Popular backends:
 - FAISS — in-memory, local (no server)
-- Chroma — persistent, open-source
+- Chroma — persistent, open-source (used in this example)
 - Pinecone — managed cloud
 """
 from dotenv import load_dotenv
@@ -23,20 +23,32 @@ docs = [
 ]
 
 try:
-    from langchain_community.vectorstores import FAISS
+    from langchain_community.vectorstores import Chroma
 
-    vectorstore = FAISS.from_documents(docs, embeddings)
+    # Create ChromaDB vector store (persists automatically)
+    vectorstore = Chroma.from_documents(
+        docs,
+        embeddings,
+        persist_directory="./chroma_index",
+        collection_name="vector_store_demo",
+    )
 
     # Similarity search
     results = vectorstore.similarity_search("What is LCEL?", k=2)
-    print("FAISS similarity search:")
+    print("ChromaDB similarity search:")
     for r in results:
-        print(" -", r.page_content[:60] + "...")
+        print(" -", r.page_content)
+        print("--------------------------------")
 
-    # Persist and reload
-    vectorstore.save_local("faiss_index")
-    loaded = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+    # ChromaDB persists automatically, reload by creating new instance
+    loaded = Chroma(
+        persist_directory="./chroma_index",
+        embedding_function=embeddings,
+        collection_name="vector_store_demo",
+    )
+    reloaded_results = loaded.similarity_search("What is RAG?", k=1)
+    print("Reloaded from disk:", reloaded_results[0].page_content[:50] + "...")
     print("Persisted and reloaded OK")
 
 except ImportError:
-    print("FAISS: pip install langchain-community faiss-cpu")
+    print("ChromaDB: pip install langchain-community chromadb")

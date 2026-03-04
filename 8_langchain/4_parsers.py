@@ -62,6 +62,8 @@ pydantic_prompt = ChatPromptTemplate.from_messages([
     ("human", "Tell me a joke about {topic}."),
 ])
 pydantic_chain = pydantic_prompt | llm | parser
+
+
 joke = pydantic_chain.invoke({
     "topic": "databases",
     "format_instructions": parser.get_format_instructions(),
