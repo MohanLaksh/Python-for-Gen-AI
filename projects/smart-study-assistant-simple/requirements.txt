@@ -1,3 +1,4 @@
 typer
 streamlit
 openai
+python-dotenv
