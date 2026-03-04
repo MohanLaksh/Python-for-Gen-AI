@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Database Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 350px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+
+        .info-text {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .legend {
+            margin-top: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        #query-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            z-index: 10;
+        }
+
+        .query-title {
+            color: #FFD700;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .similarity-score {
+            font-size: 12px;
+            color: #4CAF50;
+            margin-top: 5px;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="info-panel">
+        <h1>Vector Database Space</h1>
+        <div class="info-text">
+            This visualization shows how semantically similar documents are clustered together in a vector database.
+            Each sphere represents a document embedding in 3D space.
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FF6B6B;"></div>
+                <span>Technology Topics</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4ECDC4;"></div>
+                <span>Science Topics</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #45B7D1;"></div>
+                <span>Business Topics</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FFA07A;"></div>
+                <span>Health Topics</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #98D8C8;"></div>
+                <span>Sports Topics</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FFD700;"></div>
+                <span>Query Vector</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button onclick="simulateQuery()">Simulate Query</button>
+        <button onclick="resetView()">Reset View</button>
+        <button onclick="toggleAnimation()">Toggle Rotation</button>
+    </div>
+
+    <div id="query-info">
+        <div class="query-title">Similar Documents Found:</div>
+        <div id="results-list"></div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let scene, camera, renderer, controls, points = [];
+        let queryPoint = null;
+        let animationEnabled = true;
+        let lines = [];
+
+        // Document categories with their embeddings (simplified to 3D)
+        const documentCategories = [
+            {
+                name: 'Technology',
+                color: 0xFF6B6B,
+                documents: [
+                    { text: 'Machine Learning Algorithms', vector: [0.8, 0.9, 0.7] },
+                    { text: 'Neural Networks Deep Dive', vector: [0.85, 0.88, 0.75] },
+                    { text: 'AI Ethics and Society', vector: [0.75, 0.95, 0.65] },
+                    { text: 'Natural Language Processing', vector: [0.82, 0.87, 0.72] },
+                    { text: 'Computer Vision Techniques', vector: [0.78, 0.92, 0.68] }
+                ]
+            },
+            {
+                name: 'Science',
+                color: 0x4ECDC4,
+                documents: [
+                    { text: 'Quantum Physics Principles', vector: [-0.7, 0.8, 0.6] },
+                    { text: 'Climate Change Research', vector: [-0.75, 0.85, 0.55] },
+                    { text: 'Genetics and DNA', vector: [-0.68, 0.82, 0.62] },
+                    { text: 'Astronomy and Space', vector: [-0.72, 0.88, 0.58] },
+                    { text: 'Chemistry Fundamentals', vector: [-0.65, 0.79, 0.65] }
+                ]
+            },
+            {
+                name: 'Business',
+                color: 0x45B7D1,
+                documents: [
+                    { text: 'Marketing Strategies', vector: [0.1, -0.8, 0.7] },
+                    { text: 'Financial Management', vector: [0.15, -0.85, 0.65] },
+                    { text: 'Leadership Skills', vector: [0.08, -0.78, 0.72] },
+                    { text: 'Startup Growth Tactics', vector: [0.12, -0.82, 0.68] },
+                    { text: 'Business Analytics', vector: [0.18, -0.88, 0.63] }
+                ]
+            },
+            {
+                name: 'Health',
+                color: 0xFFA07A,
+                documents: [
+                    { text: 'Nutrition and Diet', vector: [-0.6, -0.7, -0.5] },
+                    { text: 'Exercise Physiology', vector: [-0.65, -0.75, -0.48] },
+                    { text: 'Mental Health Awareness', vector: [-0.58, -0.68, -0.52] },
+                    { text: 'Medical Diagnosis Methods', vector: [-0.62, -0.72, -0.45] },
+                    { text: 'Preventive Healthcare', vector: [-0.67, -0.78, -0.50] }
+                ]
+            },
+            {
+                name: 'Sports',
+                color: 0x98D8C8,
+                documents: [
+                    { text: 'Soccer Tactics', vector: [0.5, 0.2, -0.8] },
+                    { text: 'Basketball Training', vector: [0.55, 0.25, -0.85] },
+                    { text: 'Olympic Games History', vector: [0.48, 0.18, -0.78] },
+                    { text: 'Athletic Performance', vector: [0.52, 0.22, -0.82] },
+                    { text: 'Sports Psychology', vector: [0.58, 0.28, -0.88] }
+                ]
+            }
+        ];
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x0f0c29, 10, 50);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(3, 3, 5);
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setClearColor(0x0f0c29, 1);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 2;
+            controls.maxDistance = 15;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const pointLight1 = new THREE.PointLight(0xffffff, 1);
+            pointLight1.position.set(5, 5, 5);
+            scene.add(pointLight1);
+
+            const pointLight2 = new THREE.PointLight(0xffffff, 0.5);
+            pointLight2.position.set(-5, -5, -5);
+            scene.add(pointLight2);
+
+            // Create document points
+            createDocumentPoints();
+
+            // Grid and axes
+            const gridHelper = new THREE.GridHelper(10, 10, 0x444444, 0x222222);
+            scene.add(gridHelper);
+
+            const axesHelper = new THREE.AxesHelper(3);
+            scene.add(axesHelper);
+
+            // Event listeners
+            window.addEventListener('resize', onWindowResize);
+
+            // Start animation
+            animate();
+        }
+
+        function createDocumentPoints() {
+            documentCategories.forEach(category => {
+                category.documents.forEach(doc => {
+                    // Main sphere
+                    const geometry = new THREE.SphereGeometry(0.08, 32, 32);
+                    const material = new THREE.MeshPhongMaterial({
+                        color: category.color,
+                        emissive: category.color,
+                        emissiveIntensity: 0.3,
+                        shininess: 100
+                    });
+
+                    const sphere = new THREE.Mesh(geometry, material);
+                    sphere.position.set(
+                        doc.vector[0] * 2,
+                        doc.vector[1] * 2,
+                        doc.vector[2] * 2
+                    );
+                    sphere.userData = {
+                        text: doc.text,
+                        category: category.name,
+                        vector: doc.vector
+                    };
+
+                    scene.add(sphere);
+                    points.push(sphere);
+
+                    // Glow effect
+                    const glowGeometry = new THREE.SphereGeometry(0.12, 32, 32);
+                    const glowMaterial = new THREE.MeshBasicMaterial({
+                        color: category.color,
+                        transparent: true,
+                        opacity: 0.2
+                    });
+                    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                    sphere.add(glow);
+                });
+            });
+        }
+
+        window.simulateQuery = function () {
+            // Remove previous query point and lines
+            if (queryPoint) {
+                scene.remove(queryPoint);
+                lines.forEach(line => scene.remove(line));
+                lines = [];
+            }
+
+            // Random query vector
+            const queryVector = [
+                Math.random() * 1.6 - 0.8,
+                Math.random() * 1.6 - 0.8,
+                Math.random() * 1.6 - 0.8
+            ];
+
+            // Create query point
+            const geometry = new THREE.SphereGeometry(0.12, 32, 32);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0xFFD700,
+                emissive: 0xFFD700,
+                emissiveIntensity: 0.5
+            });
+
+            queryPoint = new THREE.Mesh(geometry, material);
+            queryPoint.position.set(
+                queryVector[0] * 2,
+                queryVector[1] * 2,
+                queryVector[2] * 2
+            );
+            scene.add(queryPoint);
+
+            // Calculate similarities
+            const similarities = points.map(point => {
+                const distance = Math.sqrt(
+                    Math.pow(point.userData.vector[0] - queryVector[0], 2) +
+                    Math.pow(point.userData.vector[1] - queryVector[1], 2) +
+                    Math.pow(point.userData.vector[2] - queryVector[2], 2)
+                );
+                const similarity = 1 / (1 + distance);
+                return { point, similarity, distance };
+            });
+
+            similarities.sort((a, b) => b.similarity - a.similarity);
+            const topResults = similarities.slice(0, 5);
+
+            // Draw lines to top results
+            topResults.forEach((result, index) => {
+                const linePoints = [
+                    queryPoint.position,
+                    result.point.position
+                ];
+
+                const geometry = new THREE.BufferGeometry().setFromPoints(linePoints);
+                const material = new THREE.LineBasicMaterial({
+                    color: 0xFFD700,
+                    opacity: 0.6 - (index * 0.1),
+                    transparent: true
+                });
+
+                const line = new THREE.Line(geometry, material);
+                scene.add(line);
+                lines.push(line);
+            });
+
+            // Show results
+            displayResults(topResults);
+        }
+
+        function displayResults(results) {
+            const queryInfo = document.getElementById('query-info');
+            const resultsList = document.getElementById('results-list');
+
+            queryInfo.style.display = 'block';
+
+            resultsList.innerHTML = results.map((result, index) => `
+                <div style="margin: 10px 0; padding: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 5px;">
+                    <div style="font-size: 13px;">${index + 1}. ${result.point.userData.text}</div>
+                    <div style="font-size: 11px; color: #888; margin-top: 3px;">Category: ${result.point.userData.category}</div>
+                    <div class="similarity-score">Similarity: ${(result.similarity * 100).toFixed(1)}%</div>
+                </div>
+            `).join('');
+        }
+
+        window.resetView = function () {
+            camera.position.set(3, 3, 5);
+            controls.target.set(0, 0, 0);
+            controls.update();
+
+            if (queryPoint) {
+                scene.remove(queryPoint);
+                queryPoint = null;
+            }
+
+            lines.forEach(line => scene.remove(line));
+            lines = [];
+
+            document.getElementById('query-info').style.display = 'none';
+        }
+
+        window.toggleAnimation = function () {
+            animationEnabled = !animationEnabled;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (animationEnabled) {
+                scene.rotation.y += 0.002;
+            }
+
+            // Animate point pulsing
+            points.forEach((point, index) => {
+                const scale = 1 + Math.sin(Date.now() * 0.001 + index) * 0.1;
+                point.scale.set(scale, scale, scale);
+            });
+
+            // Animate query point if exists
+            if (queryPoint) {
+                const scale = 1 + Math.sin(Date.now() * 0.003) * 0.2;
+                queryPoint.scale.set(scale, scale, scale);
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Initialize the scene
+        init();
+    </script>
+</body>
+
+</html>
