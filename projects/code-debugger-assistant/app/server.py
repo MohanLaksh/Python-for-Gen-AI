@@ -89,16 +89,16 @@ DEBUG_PROMPT = ChatPromptTemplate.from_messages([
 
     # Respond in JSON format as below:
    {{
-        "root_cause": "The root cause in 2-4 sentences",
+        "root_cause": "The root cause in minimum 2-4 sentences",
         "corrected_code": "The full corrected code block",
-        "explanation": "Explanation of the fix justifying why it works in 2-4 sentences",
+        "explanation": "Explanation of the fix justifying why it works in minimum 2-4 sentences",
         "test_code": "The unit test code block (if Generate Unit Test is True, else leave empty '')"
     }}
     """)
 ])
 
 llm = ChatOpenAI(
-    model="gpt-5-nano",
+    model="gpt-5.3-codex",
     temperature=0,
 )
 
