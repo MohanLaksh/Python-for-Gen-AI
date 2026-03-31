@@ -5,16 +5,25 @@ ChatPromptTemplate: from_messages([(role, template), ...])
 MessagesPlaceholder: inject conversation history
 partial(): pre-fill variables
 """
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
+
+name = "Bob"
+jobs = "help the user with their questions, and provide information about the user's questions., and be friendly and engaging."
+
+prompt_template = PromptTemplate(
+    template="You are a helpful AI bot. Your name is {name}. Your job is to to {jobs}.",
+    input_variables=["name", "jobs"],
+)
+
+prompt_value = prompt_template.invoke({"name": name, "jobs": jobs})
+print("PromptTemplate:", prompt_value.messages[-1].content)
 
 # Basic ChatPromptTemplate
 template = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful AI bot. Your name is {name}."),
-    ("human", "Hello, how are you doing?"),
-    ("ai", "I'm doing well, thanks!"),
+    ("system", f"You are a helpful AI bot. Your name is {name}. Your job is to to {jobs}."),
     ("human", "{user_input}"),
 ])
-prompt_value = template.invoke({"name": "Bob", "user_input": "What is your name?"})
+prompt_value = template.invoke({"name": "Bob", "user_input": "What is your name?", "jobs": "help the user with their questions, and provide information about the user's questions., and be friendly and engaging."})
 print("ChatPromptTemplate:", prompt_value.messages[-1].content)
 
 # MessagesPlaceholder — conversation history

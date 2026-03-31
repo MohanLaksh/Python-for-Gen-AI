@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Embedding Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050810;
+    --surface: #0d1424;
+    --border: #1a2540;
+    --text: #e2e8f0;
+    --muted: #4a5568;
+    --cyan: #00f5ff;
+    --purple: #a855f7;
+    --orange: #f97316;
+    --green: #22d3ee;
+    --pink: #ec4899;
+    --yellow: #fbbf24;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  header {
+    text-align: center;
+    padding: 2.5rem 1rem 1rem;
+    position: relative;
+  }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-top: 0.5rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.5rem auto;
+    flex-wrap: wrap;
+    padding: 0 1rem;
+  }
+
+  .btn {
+    padding: 0.6rem 1.4rem;
+    border-radius: 6px;
+    border: 1px solid var(--cyan);
+    background: transparent;
+    color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .btn:hover { background: rgba(0,245,255,0.1); }
+  .btn.primary { background: var(--cyan); color: var(--bg); font-weight: 600; }
+  .btn.primary:hover { background: #00d4e0; }
+
+  .stage-bar {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin: 0 auto 2rem;
+    padding: 0 1rem;
+    max-width: 900px;
+  }
+
+  .stage-step {
+    flex: 1;
+    text-align: center;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border);
+    position: relative;
+    transition: all 0.4s;
+  }
+
+  .stage-step.active {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+  }
+
+  .stage-step.done {
+    color: var(--green);
+    border-bottom-color: var(--green);
+  }
+
+  .pipeline {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1rem 4rem;
+    display: grid;
+    gap: 2rem;
+  }
+
+  /* ===== STAGE CARDS ===== */
+  .stage {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    opacity: 0.35;
+    transition: opacity 0.5s, border-color 0.5s;
+  }
+
+  .stage.active {
+    opacity: 1;
+    border-color: var(--cyan);
+    box-shadow: 0 0 30px rgba(0,245,255,0.08);
+  }
+
+  .stage.done { opacity: 1; border-color: var(--green); }
+
+  .stage-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .stage-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: var(--border);
+    color: var(--muted);
+    transition: all 0.4s;
+  }
+
+  .stage.active .stage-num { background: var(--cyan); color: var(--bg); }
+  .stage.done .stage-num { background: var(--green); color: var(--bg); }
+
+  /* ===== STAGE 1: Document ===== */
+  #stage-doc .doc-box {
+    background: #0a0f1e;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    font-size: 0.75rem;
+    line-height: 1.7;
+    color: #94a3b8;
+    position: relative;
+  }
+
+  .highlight-word {
+    background: rgba(0,245,255,0.15);
+    color: var(--cyan);
+    border-radius: 3px;
+    padding: 1px 4px;
+    animation: wordPop 0.4s ease forwards;
+  }
+
+  @keyframes wordPop {
+    from { background: rgba(0,245,255,0.5); transform: scale(1.1); }
+    to { background: rgba(0,245,255,0.15); transform: scale(1); }
+  }
+
+  /* ===== STAGE 2: Chunking ===== */
+  #stage-chunk .chunks-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .chunk {
+    background: #0a0f1e;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.65rem;
+    color: #64748b;
+    flex: 1 1 200px;
+    animation: chunkSlide 0.4s ease forwards;
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  @keyframes chunkSlide {
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .chunk.highlighted {
+    border-color: var(--orange);
+    color: var(--orange);
+    background: rgba(249,115,22,0.08);
+  }
+
+  .chunk-label {
+    font-size: 0.55rem;
+    color: var(--orange);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+  }
+
+  /* ===== STAGE 3: Tokenizer ===== */
+  .token-stream {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    min-height: 60px;
+  }
+
+  .token {
+    background: rgba(168,85,247,0.15);
+    border: 1px solid rgba(168,85,247,0.4);
+    border-radius: 4px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.65rem;
+    color: var(--purple);
+    animation: tokenPop 0.2s ease forwards;
+    transform: scale(0.7);
+    opacity: 0;
+  }
+
+  .token-id {
+    display: block;
+    font-size: 0.5rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 2px;
+  }
+
+  @keyframes tokenPop {
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* ===== STAGE 4: Embedding Model ===== */
+  .model-viz {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    overflow: hidden;
+  }
+
+  .model-box {
+    background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(0,245,255,0.1));
+    border: 1px solid var(--purple);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .model-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--purple);
+  }
+
+  .model-subtitle {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  .neural-dots {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 0.8rem;
+  }
+
+  .dot-row {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+  }
+
+  .ndot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--purple);
+    opacity: 0.3;
+  }
+
+  .ndot.lit {
+    opacity: 1;
+    animation: dotPulse 1s ease infinite alternate;
+    box-shadow: 0 0 6px var(--purple);
+  }
+
+  @keyframes dotPulse {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+  }
+
+  .arrow-anim {
+    font-size: 1.2rem;
+    color: var(--cyan);
+    animation: arrowBlink 0.8s infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes arrowBlink {
+    0%,100% { opacity: 1; transform: translateX(0); }
+    50% { opacity: 0.4; transform: translateX(4px); }
+  }
+
+  /* ===== STAGE 5: Vector ===== */
+  .vector-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    align-items: center;
+  }
+
+  .vec-val {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.4rem;
+    border-radius: 4px;
+    background: rgba(34,211,238,0.1);
+    border: 1px solid rgba(34,211,238,0.3);
+    color: var(--green);
+    animation: vecReveal 0.1s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes vecReveal {
+    to { opacity: 1; }
+  }
+
+  .vec-dim {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-left: 0.5rem;
+    align-self: center;
+  }
+
+  /* ===== STAGE 6: Vector DB ===== */
+  .db-viz {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .db-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .db-slot {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #0a0f1e;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.65rem;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.4s;
+  }
+
+  .db-slot.stored {
+    opacity: 1;
+    transform: translateX(0);
+    border-color: rgba(34,211,238,0.4);
+  }
+
+  .db-slot.queried {
+    border-color: var(--yellow);
+    background: rgba(251,191,36,0.08);
+    box-shadow: 0 0 12px rgba(251,191,36,0.15);
+  }
+
+  .slot-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--purple));
+    flex: 1;
+  }
+
+  .slot-score {
+    font-size: 0.6rem;
+    color: var(--yellow);
+    min-width: 40px;
+    text-align: right;
+  }
+
+  /* ===== STAGE 7: Retrieval ===== */
+  .retrieval-results {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .result-card {
+    background: #0a0f1e;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-size: 0.7rem;
+    line-height: 1.6;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.5s;
+  }
+
+  .result-card.shown {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .result-card.top { border-color: var(--yellow); }
+
+  .result-meta {
+    font-size: 0.58rem;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .score-badge {
+    display: inline-block;
+    background: rgba(251,191,36,0.15);
+    border: 1px solid var(--yellow);
+    color: var(--yellow);
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 0.55rem;
+    margin-left: 0.5rem;
+  }
+
+  /* ===== QUERY BAR ===== */
+  .query-section {
+    max-width: 1100px;
+    margin: 0 auto 1.5rem;
+    padding: 0 1rem;
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .query-input {
+    flex: 1;
+    min-width: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .query-input:focus { border-color: var(--cyan); }
+
+  /* ===== STATUS LOG ===== */
+  .log {
+    max-width: 1100px;
+    margin: 0 auto 1rem;
+    padding: 0 1rem;
+  }
+
+  .log-inner {
+    background: #030608;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    height: 90px;
+    overflow-y: auto;
+    font-size: 0.65rem;
+    line-height: 1.8;
+  }
+
+  .log-line { color: var(--muted); }
+  .log-line.info { color: var(--cyan); }
+  .log-line.ok { color: var(--green); }
+  .log-line.warn { color: var(--orange); }
+
+  .progress-bar {
+    max-width: 1100px;
+    margin: 0 auto 1.5rem;
+    padding: 0 1rem;
+  }
+
+  .progress-track {
+    background: var(--border);
+    height: 3px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--purple));
+    width: 0%;
+    transition: width 0.5s ease;
+    border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<header>
+  <h1>RAG Embedding Pipeline</h1>
+  <p>Retrieval Augmented Generation — Step-by-Step Visualization</p>
+</header>
+
+<div class="stage-bar">
+  <div class="stage-step" id="ss-1">Doc Load</div>
+  <div class="stage-step" id="ss-2">Chunking</div>
+  <div class="stage-step" id="ss-3">Tokenize</div>
+  <div class="stage-step" id="ss-4">Embed Model</div>
+  <div class="stage-step" id="ss-5">Vectors</div>
+  <div class="stage-step" id="ss-6">Vector DB</div>
+  <div class="stage-step" id="ss-7">Retrieval</div>
+</div>
+
+<div class="query-section">
+  <input class="query-input" id="queryInput" placeholder="Query: What is RAG architecture?" value="What is RAG architecture?">
+  <button class="btn primary" onclick="startPipeline()">▶ Run Pipeline</button>
+  <button class="btn" onclick="resetAll()">↺ Reset</button>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<div class="log"><div class="log-inner" id="logBox"></div></div>
+
+<div class="pipeline">
+
+  <!-- Stage 1: Document Loading -->
+  <div class="stage" id="stage-doc">
+    <div class="stage-label">
+      <div class="stage-num">1</div>
+      Document Loading
+    </div>
+    <div class="doc-box" id="docBox">
+      <span style="color:var(--muted); font-size:0.7rem">// Awaiting document input...</span>
+    </div>
+  </div>
+
+  <!-- Stage 2: Chunking -->
+  <div class="stage" id="stage-chunk">
+    <div class="stage-label">
+      <div class="stage-num">2</div>
+      Text Chunking <span style="font-size:0.65rem; color:var(--muted); font-weight:400; margin-left:0.5rem">chunk_size=200 | overlap=20</span>
+    </div>
+    <div class="chunks-grid" id="chunksGrid"></div>
+  </div>
+
+  <!-- Stage 3: Tokenization -->
+  <div class="stage" id="stage-token">
+    <div class="stage-label">
+      <div class="stage-num">3</div>
+      Tokenization
+    </div>
+    <div class="token-stream" id="tokenStream"></div>
+  </div>
+
+  <!-- Stage 4: Embedding Model -->
+  <div class="stage" id="stage-model">
+    <div class="stage-label">
+      <div class="stage-num">4</div>
+      Embedding Model
+    </div>
+    <div class="model-viz">
+      <div style="font-size:0.7rem; color:#64748b; flex:1; min-width:120px; line-height:1.8">
+        <span id="modelInput">tokens → [ 9523, 318, 257... ]</span>
+      </div>
+      <div class="arrow-anim">→</div>
+      <div class="model-box">
+        <div class="model-name">text-embedding-3-small</div>
+        <div class="model-subtitle">OpenAI • 1536 dims</div>
+        <div class="neural-dots" id="neuralDots">
+          <div class="dot-row"><div class="ndot"></div><div class="ndot"></div><div class="ndot"></div><div class="ndot"></div><div class="ndot"></div></div>
+          <div class="dot-row"><div class="ndot"></div><div class="ndot"></div><div class="ndot"></div><div class="ndot"></div></div>
+          <div class="dot-row"><div class="ndot"></div><div class="ndot"></div><div class="ndot"></div></div>
+        </div>
+      </div>
+      <div class="arrow-anim">→</div>
+      <div style="font-size:0.7rem; color:var(--cyan); flex:1; min-width:120px; line-height:1.8" id="modelOutput">
+        dense vector space...
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 5: Vectors -->
+  <div class="stage" id="stage-vec">
+    <div class="stage-label">
+      <div class="stage-num">5</div>
+      Vector Representation <span style="font-size:0.65rem; color:var(--muted); font-weight:400; margin-left:0.5rem">1536 dimensions</span>
+    </div>
+    <div class="vector-display" id="vecDisplay">
+      <span style="color:var(--muted); font-size:0.7rem">// awaiting embeddings...</span>
+    </div>
+  </div>
+
+  <!-- Stage 6: Vector DB -->
+  <div class="stage" id="stage-db">
+    <div class="stage-label">
+      <div class="stage-num">6</div>
+      Vector Database <span style="font-size:0.65rem; color:var(--muted); font-weight:400; margin-left:0.5rem">Pinecone / Chroma / FAISS</span>
+    </div>
+    <div class="db-viz">
+      <div class="db-slots" id="dbSlots"></div>
+      <div style="min-width:120px; font-size:0.65rem; color:var(--muted); line-height:2; padding-top:0.5rem">
+        <div>Index: <span style="color:var(--cyan)">cosine</span></div>
+        <div>Stored: <span id="storedCount" style="color:var(--green)">0</span> chunks</div>
+        <div>Dims: <span style="color:var(--purple)">1536</span></div>
+        <div style="margin-top:0.8rem; color:var(--yellow)" id="queryStatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 7: Retrieval -->
+  <div class="stage" id="stage-ret">
+    <div class="stage-label">
+      <div class="stage-num">7</div>
+      Semantic Retrieval
+    </div>
+    <div class="retrieval-results" id="retrievalResults">
+      <span style="color:var(--muted); font-size:0.7rem">// Top-k results will appear here...</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const DOC_TEXT = `RAG (Retrieval Augmented Generation) is an AI architecture that enhances large language models by retrieving relevant context from external knowledge bases before generating responses. Instead of relying solely on training data, RAG systems dynamically fetch up-to-date information.
+
+The embedding process converts text into dense numerical vectors in a high-dimensional space, where semantically similar content clusters together. These vectors are stored in specialized vector databases like Pinecone, Chroma, or FAISS.
+
+At query time, the user's question is embedded using the same model, and a nearest-neighbor search finds the most relevant document chunks. This retrieved context is then injected into the LLM prompt, enabling accurate, grounded responses.
+
+Key benefits include: reduced hallucinations, access to proprietary knowledge, real-time information retrieval, and the ability to cite sources.`;
+
+const CHUNKS = [
+  { id: 0, text: "RAG (Retrieval Augmented Generation) is an AI architecture that enhances large language models by retrieving relevant context from external knowledge bases before generating responses." },
+  { id: 1, text: "Instead of relying solely on training data, RAG systems dynamically fetch up-to-date information. The embedding process converts text into dense numerical vectors." },
+  { id: 2, text: "These vectors exist in a high-dimensional space where semantically similar content clusters together. Stored in vector databases like Pinecone, Chroma, or FAISS." },
+  { id: 3, text: "At query time, the user's question is embedded and a nearest-neighbor search finds the most relevant document chunks, injected into the LLM prompt." },
+  { id: 4, text: "Key benefits: reduced hallucinations, access to proprietary knowledge, real-time retrieval, and the ability to cite sources accurately." }
+];
+
+const TOKENS_SAMPLE = [
+  {t:'RA', id:'9523'},{t:'G', id:'318'},{t:'is', id:'257'},{t:'an', id:'281'},{t:'AI', id:'7798'},
+  {t:'arch', id:'4127'},{t:'ite', id:'5531'},{t:'cture', id:'6612'},{t:'that', id:'326'},{t:'enhan', id:'4443'},
+  {t:'ces', id:'979'},{t:'LLMs', id:'8021'},{t:'by', id:'416'},{t:'retrie', id:'5533'},{t:'ving', id:'1098'},
+  {t:'context', id:'4732'},{t:'from', id:'422'},{t:'knowledge', id:'4576'},{t:'bases', id:'3019'},{t:'...', id:'2026'}
+];
+
+const VECTORS = Array.from({length: 32}, () => (Math.random()*2-1).toFixed(4));
+
+const SIMILARITIES = [0.912, 0.887, 0.841, 0.798, 0.721];
+
+let running = false;
+let stageTimeouts = [];
+
+function log(msg, type='') {
+  const box = document.getElementById('logBox');
+  const el = document.createElement('div');
+  el.className = 'log-line ' + type;
+  const ts = new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  el.textContent = `[${ts}] ${msg}`;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function setProgress(pct) {
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function activateStage(id, stepId) {
+  document.getElementById(id).className = 'stage active';
+  document.getElementById(stepId).className = 'stage-step active';
+}
+
+function doneStage(id, stepId) {
+  document.getElementById(id).className = 'stage done';
+  document.getElementById(stepId).className = 'stage-step done';
+}
+
+function sleep(ms) {
+  return new Promise(r => { stageTimeouts.push(setTimeout(r, ms)); });
+}
+
+async function runStage1() {
+  activateStage('stage-doc', 'ss-1');
+  log('Loading document from source...', 'info');
+  await sleep(400);
+  
+  const box = document.getElementById('docBox');
+  box.innerHTML = '';
+  
+  const words = DOC_TEXT.split(' ');
+  for (let i = 0; i < words.length; i++) {
+    const span = document.createElement('span');
+    const highlight = [0,1,2,5,6,25,26,27,40,41].includes(i);
+    if (highlight) {
+      span.className = 'highlight-word';
+    }
+    span.textContent = words[i] + ' ';
+    box.appendChild(span);
+    if (i % 8 === 0) await sleep(30);
+  }
+  
+  log(`Document loaded: ${words.length} words, ${DOC_TEXT.length} chars`, 'ok');
+  doneStage('stage-doc', 'ss-1');
+}
+
+async function runStage2() {
+  activateStage('stage-chunk', 'ss-2');
+  log('Splitting document into overlapping chunks...', 'info');
+  await sleep(300);
+  
+  const grid = document.getElementById('chunksGrid');
+  grid.innerHTML = '';
+  
+  for (let i = 0; i < CHUNKS.length; i++) {
+    await sleep(250);
+    const chunk = document.createElement('div');
+    chunk.className = 'chunk' + (i === 0 ? ' highlighted' : '');
+    chunk.style.animationDelay = '0s';
+    chunk.innerHTML = `<div class="chunk-label">Chunk ${i+1}</div>${CHUNKS[i].text.substring(0,80)}...`;
+    grid.appendChild(chunk);
+  }
+  
+  log(`Created ${CHUNKS.length} chunks with 20-token overlap`, 'ok');
+  doneStage('stage-chunk', 'ss-2');
+}
+
+async function runStage3() {
+  activateStage('stage-token', 'ss-3');
+  log('Tokenizing chunk #1 via BPE tokenizer...', 'info');
+  await sleep(300);
+  
+  const stream = document.getElementById('tokenStream');
+  stream.innerHTML = '';
+  
+  for (let i = 0; i < TOKENS_SAMPLE.length; i++) {
+    await sleep(80);
+    const tok = document.createElement('div');
+    tok.className = 'token';
+    tok.style.animationDelay = '0s';
+    tok.innerHTML = `${TOKENS_SAMPLE[i].t}<span class="token-id">${TOKENS_SAMPLE[i].id}</span>`;
+    stream.appendChild(tok);
+  }
+  
+  log(`Tokenized: ${TOKENS_SAMPLE.length}+ tokens generated for chunk`, 'ok');
+  doneStage('stage-token', 'ss-3');
+}
+
+async function runStage4() {
+  activateStage('stage-model', 'ss-4');
+  log('Sending tokens to embedding model...', 'info');
+  await sleep(400);
+  
+  const dots = document.querySelectorAll('.ndot');
+  let litCount = 0;
+  
+  async function lightDots() {
+    for (let pass = 0; pass < 3; pass++) {
+      for (let i = 0; i < dots.length; i++) {
+        await sleep(60);
+        dots[i].classList.add('lit');
+      }
+      await sleep(200);
+      dots.forEach(d => d.classList.remove('lit'));
+      await sleep(100);
+    }
+  }
+  
+  document.getElementById('modelInput').textContent = '→ [ 9523, 318, 257, 281, 7798, ... ]';
+  
+  await lightDots();
+  
+  document.getElementById('modelOutput').innerHTML = 
+    '← <span style="color:var(--green)">1536-dim</span> dense vector';
+  
+  log('Embedding model processed tokens → dense vector', 'ok');
+  doneStage('stage-model', 'ss-4');
+}
+
+async function runStage5() {
+  activateStage('stage-vec', 'ss-5');
+  log('Generating 1536-dimensional embedding vector...', 'info');
+  await sleep(300);
+  
+  const display = document.getElementById('vecDisplay');
+  display.innerHTML = '<span style="color:var(--muted); font-size:0.65rem">chunk_1_vec = [</span>';
+  
+  for (let i = 0; i < VECTORS.length; i++) {
+    await sleep(40);
+    const v = document.createElement('span');
+    v.className = 'vec-val';
+    v.style.animationDelay = '0s';
+    v.textContent = VECTORS[i];
+    v.style.color = parseFloat(VECTORS[i]) > 0 ? 'var(--green)' : 'var(--pink)';
+    display.appendChild(v);
+  }
+  
+  const ellipsis = document.createElement('span');
+  ellipsis.className = 'vec-dim';
+  ellipsis.textContent = '... +1504 more dims ]';
+  display.appendChild(ellipsis);
+  
+  log('Vector generated: shape=(1,1536), dtype=float32', 'ok');
+  doneStage('stage-vec', 'ss-5');
+}
+
+async function runStage6() {
+  activateStage('stage-db', 'ss-6');
+  log('Storing all chunk vectors in vector database...', 'info');
+  await sleep(300);
+  
+  const slots = document.getElementById('dbSlots');
+  slots.innerHTML = '';
+  let count = 0;
+  
+  for (let i = 0; i < CHUNKS.length; i++) {
+    await sleep(300);
+    const slot = document.createElement('div');
+    slot.className = 'db-slot';
+    const barWidth = 60 + Math.random() * 40;
+    slot.innerHTML = `
+      <span style="font-size:0.6rem; color:var(--muted); min-width:55px">chunk_${i+1}_vec</span>
+      <div class="slot-bar" style="width:${barWidth}%"></div>
+      <span style="font-size:0.55rem; color:var(--muted)">[1536d]</span>
+    `;
+    slots.appendChild(slot);
+    
+    setTimeout(() => slot.classList.add('stored'), 50);
+    count++;
+    document.getElementById('storedCount').textContent = count;
+    log(`Indexed chunk ${i+1}/5 → id:chunk_${i+1}`, 'ok');
+  }
+  
+  await sleep(500);
+  document.getElementById('queryStatus').innerHTML = '⚡ Index ready';
+  
+  doneStage('stage-db', 'ss-6');
+}
+
+async function runStage7() {
+  activateStage('stage-ret', 'ss-7');
+  const query = document.getElementById('queryInput').value || 'What is RAG architecture?';
+  log(`Embedding query: "${query}"`, 'info');
+  await sleep(400);
+  
+  document.getElementById('queryStatus').innerHTML = '🔍 Searching...';
+  log('Running cosine similarity search over index...', 'info');
+  await sleep(600);
+  
+  // Highlight top match in db
+  const dbSlotEls = document.querySelectorAll('.db-slot');
+  dbSlotEls[0].classList.add('queried');
+  dbSlotEls[1].classList.add('queried');
+  dbSlotEls[2].classList.add('queried');
+  
+  document.getElementById('queryStatus').innerHTML = '✓ Found top-3';
+  
+  const results = document.getElementById('retrievalResults');
+  results.innerHTML = '';
+  
+  const topChunks = [0, 1, 2].map((ci, rank) => ({ chunk: CHUNKS[ci], score: SIMILARITIES[rank] }));
+  
+  for (let i = 0; i < topChunks.length; i++) {
+    await sleep(350);
+    const card = document.createElement('div');
+    card.className = 'result-card' + (i === 0 ? ' top' : '');
+    card.innerHTML = `
+      <div class="result-meta">
+        Rank ${i+1} — chunk_${i+1}
+        <span class="score-badge">score: ${topChunks[i].score}</span>
+      </div>
+      ${topChunks[i].chunk.text}
+    `;
+    results.appendChild(card);
+    setTimeout(() => card.classList.add('shown'), 50);
+    log(`Retrieved chunk_${i+1} (similarity=${topChunks[i].score})`, i===0?'ok':'');
+  }
+  
+  await sleep(400);
+  log('✓ Top-3 chunks injected into LLM context window', 'ok');
+  log(`Pipeline complete! Query "${query}" fully processed.`, 'ok');
+  
+  doneStage('stage-ret', 'ss-7');
+  setProgress(100);
+}
+
+async function startPipeline() {
+  if (running) return;
+  running = true;
+  resetAll(false);
+  await sleep(100);
+  
+  log('=== RAG Embedding Pipeline Started ===', 'info');
+  
+  setProgress(5);
+  await runStage1();
+  setProgress(15);
+  await sleep(200);
+  
+  await runStage2();
+  setProgress(30);
+  await sleep(200);
+  
+  await runStage3();
+  setProgress(45);
+  await sleep(200);
+  
+  await runStage4();
+  setProgress(60);
+  await sleep(200);
+  
+  await runStage5();
+  setProgress(75);
+  await sleep(200);
+  
+  await runStage6();
+  setProgress(88);
+  await sleep(200);
+  
+  await runStage7();
+  
+  running = false;
+}
+
+function resetAll(clearLog = true) {
+  stageTimeouts.forEach(clearTimeout);
+  stageTimeouts = [];
+  running = false;
+  
+  ['stage-doc','stage-chunk','stage-token','stage-model','stage-vec','stage-db','stage-ret'].forEach(id => {
+    document.getElementById(id).className = 'stage';
+  });
+  for (let i=1;i<=7;i++) {
+    document.getElementById('ss-'+i).className = 'stage-step';
+  }
+  
+  document.getElementById('docBox').innerHTML = '<span style="color:var(--muted); font-size:0.7rem">// Awaiting document input...</span>';
+  document.getElementById('chunksGrid').innerHTML = '';
+  document.getElementById('tokenStream').innerHTML = '';
+  document.getElementById('modelInput').textContent = 'tokens → [ 9523, 318, 257... ]';
+  document.getElementById('modelOutput').textContent = 'dense vector space...';
+  document.getElementById('vecDisplay').innerHTML = '<span style="color:var(--muted); font-size:0.7rem">// awaiting embeddings...</span>';
+  document.getElementById('dbSlots').innerHTML = '';
+  document.getElementById('storedCount').textContent = '0';
+  document.getElementById('queryStatus').innerHTML = '';
+  document.getElementById('retrievalResults').innerHTML = '<span style="color:var(--muted); font-size:0.7rem">// Top-k results will appear here...</span>';
+  document.querySelectorAll('.ndot').forEach(d => d.classList.remove('lit'));
+  
+  setProgress(0);
+  if (clearLog) document.getElementById('logBox').innerHTML = '';
+}
+</script>
+</body>
+</html>
