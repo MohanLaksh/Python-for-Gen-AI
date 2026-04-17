@@ -23,3 +23,8 @@ A Python-based multi-LLM summarisation engine that provides a unified interface 
 - **Providers Supported**: OpenAI, Anthropic, Google Gemini, LM Studio.
 - **Features**: Structured Pydantic output, robust retry logic, and easy provider switching via CLI.
 
+### 6. [Conversational RAG bot](./converstational_rag_bot/)
+A compact LangChain demo that pairs **retrieval-augmented generation** with **per-session chat memory**: tutorial snippets live in a persisted **Chroma** store, each question pulls relevant context, and **RunnableWithMessageHistory** keeps prior turns for the same `session_id`.
+- **Stack**: LangChain (LCEL), Chroma, OpenAI (chat + embeddings).
+- **Features**: CLI loop, explicit prepare step for prompt inputs (context / question / history), optional Excalidraw diagram; see the project `README.md` for setup and env vars.
+
